@@ -147,7 +147,7 @@ class LuxPowertekComponent : public PollingComponent {
   void decode_bank0();
   template <typename T>
   void publish_state_(const std::string &key, T value) {
-      if (key == "lux_battery_voltage" && this->lux_vbat_sensor_) {
+      if (key == "lux_battery_voltage" && this->lux_battery_voltage_sensor_) {
           this->lux_battery_voltage_sensor_->publish_state(value);
       } else if (key == "lux_battery_percent" && this->lux_battery_percent_sensor_) {
           this->lux_battery_percent_sensor_->publish_state(value);
