@@ -2,6 +2,7 @@
     "files.associations": {
         "compare": "cpp",
         "cstdint": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "vector": "cpp"
     }
 }

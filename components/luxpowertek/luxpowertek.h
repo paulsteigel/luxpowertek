@@ -58,6 +58,7 @@ struct LuxLogDataRawSection1 {
 
 class LuxPowertekComponent : public PollingComponent {
  public:
+  void loop() override;
   void setup() override;
   void update() override;
 
@@ -74,6 +75,18 @@ class LuxPowertekComponent : public PollingComponent {
 
  protected:
   // Communication
+  void start_communication();
+  void disconnect();
+  size_t build_read_packet(uint8_t *buf, uint16_t start_reg, uint16_t qty_reg);
+  uint16_t crc16_modbus(const uint8_t *data, size_t length);
+  void decode_bank0(const uint8_t *data);
+  
+  enum CommState {
+    STATE_IDLE,
+    STATE_CONNECTED,
+    STATE_WAITING
+  };
+
   bool send_request(uint16_t start_address);
   void process_frame_();
 
