@@ -81,6 +81,7 @@ class LuxPowertekComponent : public PollingComponent {
   uint16_t crc16_modbus(const uint8_t *data, size_t length);
   void decode_bank0(const uint8_t *data);
   
+  // State machine
   enum CommState {
     STATE_IDLE,
     STATE_CONNECTED,
@@ -101,10 +102,6 @@ class LuxPowertekComponent : public PollingComponent {
   sensor::Sensor *vbat_sensor_{nullptr};
   sensor::Sensor *soc_sensor_{nullptr};
   sensor::Sensor *p_discharge_sensor_{nullptr};
-
-  // State machine
-  enum CommState { STATE_IDLE, STATE_WAITING };
-  CommState state_{STATE_IDLE};
 
   std::vector<uint8_t> rx_buffer_;
   uint32_t request_start_ms_{0};
