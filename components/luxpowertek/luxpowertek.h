@@ -3,6 +3,7 @@
 #include "esphome/core/component.h"
 #include "esphome/components/sensor/sensor.h"
 #include <WiFiClient.h>
+#include <vector>
 
 namespace esphome {
 namespace luxpowertek {
@@ -60,20 +61,21 @@ class LuxPowertekComponent : public PollingComponent {
   void setup() override;
   void update() override;
 
-  // set initial data for connection
+  // TCP configuration
   void set_host(const std::string &host) { host_ = host; }
   void set_port(uint16_t port) { port_ = port; }
   void set_dongle_serial(const std::string &serial) { dongle_serial_ = serial; }
   void set_inverter_serial_number(const std::string &serial) { inverter_serial_ = serial; }
-  
-  // define sensors setters
+
+  // Sensor registration
   void set_vbat_sensor(sensor::Sensor *s) { vbat_sensor_ = s; }
   void set_soc_sensor(sensor::Sensor *s) { soc_sensor_ = s; }
   void set_p_discharge_sensor(sensor::Sensor *s) { p_discharge_sensor_ = s; }
 
  protected:
-  void send_request(uint16_t start_address);
-  bool receive_packet(std::vector<uint8_t> &buf);
+  // Communication
+  bool send_request(uint16_t start_address);
+  void process_frame_();
 
   std::string host_;
   uint16_t port_;
@@ -82,9 +84,18 @@ class LuxPowertekComponent : public PollingComponent {
 
   WiFiClient client_;
 
+  // Sensor handles
   sensor::Sensor *vbat_sensor_{nullptr};
   sensor::Sensor *soc_sensor_{nullptr};
   sensor::Sensor *p_discharge_sensor_{nullptr};
+
+  // State machine
+  enum CommState { STATE_IDLE, STATE_WAITING };
+  CommState state_{STATE_IDLE};
+
+  std::vector<uint8_t> rx_buffer_;
+  uint32_t request_start_ms_{0};
+  uint32_t last_byte_ms_{0};
 };
 
 }  // namespace luxpowertek
