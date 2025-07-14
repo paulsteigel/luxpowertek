@@ -8,7 +8,7 @@ LuxPowertekComponent = luxpowertek_ns.class_("LuxPowertekComponent", cg.PollingC
 CONFIG_SCHEMA = (
     cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(LuxpowerSNAComponent),
+            cv.GenerateID(): cv.declare_id(LuxPowertekComponent),
             cv.Required("host"): cv.string,
             cv.Required("port"): cv.port,
             cv.Required("dongle_serial"): cv.string,
