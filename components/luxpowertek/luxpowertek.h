@@ -2,6 +2,7 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome.h"
 #include <map>
+#include <string>
 
 namespace esphome {
 namespace luxpowertek {
@@ -11,7 +12,6 @@ class LuxPowertekComponent : public PollingComponent {
   LuxPowertekComponent() : PollingComponent(20000) {}
 
   void set_host(const std::string &h) { this->host_ = h; }
-  std::string host_;
   void set_port(uint16_t p) { port_ = p; }
   void set_dongle_serial(const std::string &s) { dongle_ = s; }
   void set_inverter_serial(const std::string &s) { inv_serial_ = s; }
@@ -24,7 +24,7 @@ class LuxPowertekComponent : public PollingComponent {
   }
 
  protected:
-  IPAddress host_;
+  std::string host_;
   uint16_t port_;
   std::string dongle_;
   std::string inv_serial_;
