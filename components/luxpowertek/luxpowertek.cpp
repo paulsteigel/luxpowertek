@@ -74,6 +74,7 @@ void LuxPowertekComponent::loop() {
 }
 
 void LuxPowertekComponent::start_communication() {
+  this->state_ = STATE_CONNECTING;
   ESP_LOGD(TAG, "Starting communication for bank %d", this->current_bank_);
   this->disconnect();
   
@@ -83,7 +84,7 @@ void LuxPowertekComponent::start_communication() {
     return;
   }
 
-  this->state_ = STATE_CONNECTED;
+  this->state_ = STATE_CONNECTED;  // Use the new state
   this->request_start_ms_ = millis();
   this->last_byte_ms_ = millis();
   
@@ -94,10 +95,10 @@ void LuxPowertekComponent::start_communication() {
   }
 }
 
-bool LuxPowertekComponent::send_request(uint16_t start_address) {
+bool LuxPowertekComponent::send_request(uint16_t start_address) {  
   uint8_t request[38];
   size_t len = this->build_read_packet(request, start_address);
-  
+
   if (this->client_.write(request, len) != len) {
     ESP_LOGE(TAG, "Send failed!");
     return false;
@@ -268,7 +269,7 @@ void LuxPowertekComponent::decode_bank0() {
   // Bank0 sensors
   publish_state_("lux_battery_voltage", bank0_.v_bat / 10.0f);
   publish_state_("lux_battery_percent", static_cast<float>(bank0_.soc));
-  publish_state_("lux_battery_discharge", static_cast<float>(bank0_.p_discharge))
+  publish_state_("lux_battery_discharge", static_cast<float>(bank0_.p_discharge));
 
   ESP_LOGD(TAG, "Decoded: lux_battery_voltage=%.1fV, lux_battery_percent=%d%%, lux_battery_discharge=%dW", 
            bank0_.v_bat / 10.0f, bank0_.soc, bank0_.p_discharge);

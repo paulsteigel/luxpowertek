@@ -132,9 +132,10 @@ class LuxPowertekComponent : public PollingComponent {
   void set_dongle_serial(const std::string &serial) { dongle_serial_ = serial; }
   void set_inverter_serial_number(const std::string &serial) { inverter_serial_ = serial; }
 
-  void set_lux_vbat_sensor(sensor::Sensor *s) { lux_battery_voltage_sensor_ = s; }
-  void set_lux_soc_sensor(sensor::Sensor *s) { lux_battery_percent_sensor_ = s; }
-  void set_lux_p_discharge_sensor(sensor::Sensor *s) { lux_battery_discharge_sensor_ = s; }
+  // Fixed public setters
+  void set_lux_battery_voltage_sensor(sensor::Sensor *s) { lux_battery_voltage_sensor_ = s; }
+  void set_lux_battery_percent_sensor(sensor::Sensor *s) { lux_battery_percent_sensor_ = s; }
+  void set_lux_battery_discharge_sensor(sensor::Sensor *s) { lux_battery_discharge_sensor_ = s; }
 
  protected:
   void start_communication();
@@ -155,7 +156,7 @@ class LuxPowertekComponent : public PollingComponent {
           this->lux_battery_discharge_sensor_->publish_state(value);
       }
   }
-  // Raw data storage
+
   LuxLogDataRawSection1 bank0_{};
   LuxLogDataRawSection2 bank1_{};
   LuxLogDataRawSection3 bank2_{};
@@ -173,16 +174,19 @@ class LuxPowertekComponent : public PollingComponent {
   sensor::Sensor *lux_battery_percent_sensor_{nullptr};
   sensor::Sensor *lux_battery_discharge_sensor_{nullptr};
 
-  // luxpowertek.h
   enum CommState {
     STATE_IDLE,
     STATE_CONNECTING,
+    STATE_CONNECTED,       // Added
     STATE_SENDING,
     STATE_WAITING_RESPONSE,
     STATE_PROCESSING,
-    STATE_DISCONNECTING
+    STATE_DISCONNECTING,
+    STATE_WAITING         // Added
   };
 
+ private:
+  CommState state_{STATE_IDLE};  // Added state variable
   uint8_t current_bank_{0};
   std::vector<uint8_t> rx_buffer_;
   uint32_t request_start_ms_{0};
