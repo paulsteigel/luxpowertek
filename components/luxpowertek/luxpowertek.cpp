@@ -92,29 +92,29 @@ void LuxPowertekComponent::send_request(uint16_t start_address) {
 }
 
 bool LuxPowertekComponent::receive_packet(std::vector<uint8_t> &buf) {
-  const uint32_t timeout_ms = 10000;  // Extend timeout to 3 seconds
-  const uint32_t check_interval = 10;
-  uint32_t start_time = millis();
+  uint32_t start = millis();
+  constexpr uint32_t timeout = 2000;
 
-  while ((millis() - start_time) < timeout_ms) {
+  while ((millis() - start) < timeout) {
     while (client_.available()) {
-      buf.push_back(client_.read());
+      int byte = client_.read();
+      buf.push_back(byte);
     }
 
-    // Break early if data has started coming in and there's a pause
     if (!buf.empty()) {
-      static uint32_t last_rx_time = millis();
-      if ((millis() - last_rx_time) > 100) {
-        break;
-      }
-      last_rx_time = millis();
+      ESP_LOGD(TAG, "RX Partial: %s", format_hex_pretty(buf).c_str());
     }
 
-    yield();  // allow other tasks
-    delay(check_interval);
+    delay(10);  // keep polling
   }
 
   if (buf.empty()) {
+    ESP_LOGW(TAG, "No data received at all");
+    return false;
+  }
+
+  if (buf[0] != 0xA1 || buf[4] != 0x05) {
+    ESP_LOGW(TAG, "Invalid response header: %s", format_hex_pretty(buf).c_str());
     return false;
   }
 
