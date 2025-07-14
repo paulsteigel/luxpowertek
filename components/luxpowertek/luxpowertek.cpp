@@ -15,9 +15,10 @@ uint16_t LuxPowertekComponent::crc16_modbus(const uint8_t *data, size_t len) {
   }
   return crc;
 }
+// nothing él
 
 void LuxPowertekComponent::setup() {
-  ESP_LOGI(TAG, "Connecting to inverter at %s:%u", host_.toString().c_str(), port_);
+  ESP_LOGI(TAG, "Connecting to inverter at %s:%u", host_.c_str(), port_); 
 }
 
 void LuxPowertekComponent::send_request(uint16_t start_reg) {
