@@ -12,6 +12,7 @@ from esphome.const import (
     UNIT_WATT,
     STATE_CLASS_MEASUREMENT,
 )
+from . import LUXPOWERTEK_COMPONENT_SCHEMA, CONF_LUXPOWERTEK_ID
 
 luxpowertek_ns = cg.esphome_ns.namespace("luxpowertek")
 LuxPowertekComponent = luxpowertek_ns.class_("LuxPowertekComponent", cg.Component)
