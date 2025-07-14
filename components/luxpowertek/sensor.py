@@ -50,4 +50,5 @@ async def to_code(config):
     for key in SENSOR_TYPES:
         if key in config:
             sens = await sensor.new_sensor(config[key])
-            cg.add(hub.register_sensor(key, sens))
+            cg.add(getattr(hub, f"set_{c_name}_sensor")(sens))
+            #cg.add(hub.register_sensor(key, sens))
