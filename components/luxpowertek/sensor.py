@@ -131,19 +131,19 @@ YAML_TO_C_NAMES = {
 }
 
 SENSOR_TYPES = {
-    "lux_soc": sensor.sensor_schema(
+    "lux_battery_percent": sensor.sensor_schema(
         unit_of_measurement=UNIT_PERCENT,
         device_class=DEVICE_CLASS_BATTERY,
         state_class=STATE_CLASS_MEASUREMENT,
         accuracy_decimals=0,
     ),
-    "lux_vbat": sensor.sensor_schema(
+    "lux_battery_voltage": sensor.sensor_schema(
         unit_of_measurement=UNIT_VOLT,
         device_class=DEVICE_CLASS_VOLTAGE,
         state_class=STATE_CLASS_MEASUREMENT,
         accuracy_decimals=1,
     ),
-    "lux_p_discharge": sensor.sensor_schema(
+    "lux_battery_discharge": sensor.sensor_schema(
         unit_of_measurement=UNIT_WATT,
         device_class=DEVICE_CLASS_POWER,
         state_class=STATE_CLASS_MEASUREMENT,
