@@ -1,125 +1,119 @@
 #include "luxpowertek.h"
 #include "esphome/core/log.h"
-#include "esphome/core/helpers.h"   // format_hex_pretty()
 
 namespace esphome {
 namespace luxpowertek {
 
 static const char *const TAG = "luxpowertek";
 
-static constexpr size_t HEADER_LEN = 0x1A;        // prefix → before raw data
-static constexpr uint16_t WORDS_TO_READ = 0x28;   // 40 words (80 bytes)
-static constexpr uint32_t RX_TIMEOUT_MS = 1000;   // 1 s
-
-// -----------------------------------------------------------------------------
-//  Setup
-// -----------------------------------------------------------------------------
+// ========== Setup ==========
 void LuxPowertekComponent::setup() {
   ESP_LOGI(TAG, "LuxPowertek component setup complete");
 }
 
-// -----------------------------------------------------------------------------
-//  Polling loop
-// -----------------------------------------------------------------------------
+// ========== Update ==========
 void LuxPowertekComponent::update() {
-  const uint16_t bank_start = 0x0000;   // Only bank‑0 for now
-
   ESP_LOGD(TAG, "TX Bank 0");
-  this->send_request(bank_start);
+  this->send_request(0x0000);
 
-  std::vector<uint8_t> rx;
-  if (!this->receive_packet(rx)) {
+  std::vector<uint8_t> response;
+  if (!this->receive_packet(response)) {
     ESP_LOGW(TAG, "No valid response received");
     return;
   }
 
-  if (rx.size() < HEADER_LEN + sizeof(LuxLogDataRawSection1)) {
-    ESP_LOGW(TAG, "Packet too short: %u bytes", (unsigned) rx.size());
+  // Must be enough to contain section1
+  const size_t data_offset = 0x1A;
+  if (response.size() < data_offset + sizeof(LuxLogDataRawSection1)) {
+    ESP_LOGW(TAG, "Response too short: %d bytes", response.size());
     return;
   }
 
-  const uint8_t *data = rx.data() + HEADER_LEN;
-  const auto *raw = reinterpret_cast<const LuxLogDataRawSection1 *>(data);
+  const uint8_t *data = response.data() + data_offset;
+  auto *raw = reinterpret_cast<const LuxLogDataRawSection1 *>(data);
 
-  // Decode & publish
-  float vbat = raw->v_bat / 10.0f;      // tenths → volts
-  float soc  = raw->soc;                // %
-  float pdis = raw->p_discharge;        // W
+  float soc = raw->soc;
+  float vbat = raw->v_bat / 10.0f;
+  float pdis = raw->p_discharge;
 
-  ESP_LOGD(TAG,
-           "Decoded ►  Vbat=%.1f V  SOC=%.0f %%  P_dis=%.0f W",
-           vbat, soc, pdis);
+  ESP_LOGD(TAG, "Decoded: SOC=%.0f%% Vbat=%.1fV PDis=%.0fW", soc, vbat, pdis);
+
+  if (soc_sensor_ != nullptr)
+    soc_sensor_->publish_state(soc);
 
   if (vbat_sensor_ != nullptr)
     vbat_sensor_->publish_state(vbat);
-  if (soc_sensor_ != nullptr)
-    soc_sensor_->publish_state(soc);
+
   if (p_discharge_sensor_ != nullptr)
     p_discharge_sensor_->publish_state(pdis);
 }
 
-// -----------------------------------------------------------------------------
-//  Build & send a request frame
-// -----------------------------------------------------------------------------
+// ========== Send Request ==========
 void LuxPowertekComponent::send_request(uint16_t start_address) {
   std::vector<uint8_t> tx;
 
-  auto add16 = [&](uint16_t v) {
-    tx.push_back(v >> 8);
-    tx.push_back(v & 0xFF);
+  auto add16 = [&](uint16_t val) {
+    tx.push_back(val >> 8);
+    tx.push_back(val & 0xFF);
   };
 
-  tx.push_back(0xA1);            // Prefix
-  add16(0x1A);                   // Protocol ver
-  add16(0x20);                   // Length (fixed for log request)
-  tx.push_back(0x00);            // Address
-  tx.push_back(0x01);            // Function
+  tx.push_back(0xA1);               // Prefix
+  add16(0x001A);                    // Protocol Version
+  add16(0x0020);                    // Packet Length
+  tx.push_back(0x00);              // Address
+  tx.push_back(0x01);              // Function
 
-  tx.push_back(0xC2);            // LuxPower fixed byte
+  tx.push_back(0xC2);              // ID Prefix
   tx.insert(tx.end(), dongle_serial_.begin(), dongle_serial_.end());
 
-  tx.push_back(0x12);
-  tx.push_back(0x00);
-  tx.push_back(0x01);
+  tx.push_back(0x12);              // Translated Data
+  tx.push_back(0x00);              // Device Type
+  tx.push_back(0x01);              // Function = Log Read
 
-  tx.push_back(0x04);            // SN length
+  tx.push_back(0x04);              // Inverter SN length
   tx.insert(tx.end(), inverter_serial_.begin(), inverter_serial_.end());
 
-  add16(start_address);          // Register start
-  add16(WORDS_TO_READ);          // 40 words
+  add16(start_address);            // Start address
+  add16(0x28);                     // Length (40 words = 80 bytes)
 
-  // ------------------------------------------------------------------
-  //  Lux checksum: LOW‑byte of simple sum, plus dummy HIGH byte = 0x00
-  // ------------------------------------------------------------------
-  uint8_t crc = 0;
-  for (auto b : tx) crc += b;
+  // CRC - simple sum of bytes
+  uint16_t crc = 0;
+  for (auto b : tx)
+    crc += b;
 
-  tx.push_back(0x00);   // HIGH byte (Lux ignores)
-  tx.push_back(crc);    // LOW  byte
+  tx.push_back((crc >> 8) & 0xFF);
+  tx.push_back(crc & 0xFF);
 
-  ESP_LOGD(TAG, "TX Frame: %s", format_hex_pretty(tx).c_str());
+  // Send over TCP
+  if (!client_.connect(host_.c_str(), port_)) {
+    ESP_LOGW(TAG, "TCP connect failed to %s:%u", host_.c_str(), port_);
+    return;
+  }
 
-  client_.connect(host_.c_str(), port_);
   client_.write(tx.data(), tx.size());
+  ESP_LOGD(TAG, "TX Frame: %s", format_hex_pretty(tx).c_str());
+  delay(100);  // allow time for inverter to respond
 }
 
-// -----------------------------------------------------------------------------
-//  Read response into buffer
-// -----------------------------------------------------------------------------
+// ========== Receive Packet ==========
 bool LuxPowertekComponent::receive_packet(std::vector<uint8_t> &buf) {
-  uint32_t start = millis();
+  constexpr uint32_t timeout_ms = 1000;
+  uint32_t start_time = millis();
 
-  while (client_.connected() && (millis() - start) < RX_TIMEOUT_MS) {
+  while (millis() - start_time < timeout_ms) {
     while (client_.available()) {
       buf.push_back(client_.read());
     }
+    if (!buf.empty())
+      break;
+
     delay(10);
   }
 
   if (buf.empty())
     return false;
 
-  ESP_LOGD(TAG, "RX raw %s", format_hex_pretty(buf).c_str());
+  ESP_LOGD(TAG, "RX Raw: %s", format_hex_pretty(buf).c_str());
   return true;
 }
 
