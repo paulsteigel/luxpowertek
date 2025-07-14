@@ -16,7 +16,7 @@ void LuxPowertekComponent::update() {
   if (this->state_ == STATE_IDLE) {
     this->start_communication();
   } else if (this->state_ == STATE_WAITING && 
-             millis() - this->request_start_ms_ > 10000) {
+             millis() - this->request_start_ms_ > 2000) {
     ESP_LOGW(TAG, "Response timeout, restarting");
     this->disconnect();
     this->state_ = STATE_IDLE;
