@@ -2,7 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/sensor/sensor.h"
-#include <vector>
+#include "WiFiClient.h"
 
 namespace esphome {
 namespace luxpowertek {
@@ -58,6 +58,13 @@ class LuxPowertekComponent : public PollingComponent {
   void setup() override;
   void update() override;
 
+  // Config setters
+  void set_host(const std::string &host) { this->host_ = host; }
+  void set_port(uint16_t port) { this->port_ = port; }
+  void set_dongle_serial(const std::string &s) { this->dongle_serial_ = s; }
+  void set_inverter_serial_number(const std::string &s) { this->inverter_serial_ = s; }
+
+  // Sensor setters
   void set_soc_sensor(sensor::Sensor *sensor) { this->soc_sensor_ = sensor; }
   void set_vbat_sensor(sensor::Sensor *sensor) { this->vbat_sensor_ = sensor; }
   void set_p_discharge_sensor(sensor::Sensor *sensor) { this->p_discharge_sensor_ = sensor; }
@@ -65,6 +72,16 @@ class LuxPowertekComponent : public PollingComponent {
  protected:
   void parse_packet_(const uint8_t *data, size_t length);
 
+  // Config
+  std::string host_;
+  uint16_t port_;
+  std::string dongle_serial_;
+  std::string inverter_serial_;
+
+  // WiFi TCP client
+  WiFiClient client_;
+
+  // Sensors
   sensor::Sensor *soc_sensor_{nullptr};
   sensor::Sensor *vbat_sensor_{nullptr};
   sensor::Sensor *p_discharge_sensor_{nullptr};
