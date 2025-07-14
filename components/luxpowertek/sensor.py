@@ -38,6 +38,6 @@ CONFIG_SCHEMA = cv.All(
 )
 
 async def to_code(config):
-    hub = await cg.get_variable(config[CONF_ID])
+    hub = await cg.get_variable(config[CONF_LUXPOWERTEK_ID])
     sens = await sensor.new_sensor(config)
     cg.add(hub.register_sensor(config[CONF_TYPE], sens))
