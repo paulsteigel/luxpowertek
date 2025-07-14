@@ -5,14 +5,19 @@ from esphome.const import CONF_ID
 luxpowertek_ns = cg.esphome_ns.namespace("luxpowertek")
 LuxPowertekComponent = luxpowertek_ns.class_("LuxPowertekComponent", cg.PollingComponent)
 
-CONFIG_SCHEMA = cv.Schema({
-    cv.GenerateID(): cv.declare_id(LuxPowertekComponent),
-    cv.Required("host"): cv.string,
-    cv.Required("port"): cv.int_,
-    cv.Required("dongle_serial"): cv.string_strict,
-    cv.Required("inverter_serial_number"): cv.string_strict,
-    cv.Optional("update_interval", default="20s"): cv.update_interval,
-})
+CONFIG_SCHEMA = (
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(LuxpowerSNAComponent),
+            cv.Required("host"): cv.string,
+            cv.Required("port"): cv.port,
+            cv.Required("dongle_serial"): cv.string,
+            cv.Required("inverter_serial_number"): cv.string,
+        }
+    )
+    .extend(cv.polling_component_schema("20s"))
+)
+
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
