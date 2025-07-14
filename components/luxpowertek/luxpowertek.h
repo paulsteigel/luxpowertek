@@ -10,7 +10,8 @@ class LuxPowertekComponent : public PollingComponent {
  public:
   LuxPowertekComponent() : PollingComponent(20000) {}
 
-  void set_host(IPAddress h) { host_ = h; }
+  void set_host(const std::string &h) { this->host_ = h; }
+  std::string host_;
   void set_port(uint16_t p) { port_ = p; }
   void set_dongle_serial(const std::string &s) { dongle_ = s; }
   void set_inverter_serial(const std::string &s) { inv_serial_ = s; }
