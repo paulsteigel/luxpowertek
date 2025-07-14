@@ -92,16 +92,26 @@ void LuxPowertekComponent::send_request(uint16_t start_address) {
 }
 
 bool LuxPowertekComponent::receive_packet(std::vector<uint8_t> &buf) {
-  constexpr uint32_t timeout_ms = 1000;
-  uint32_t start = millis();
+  const uint32_t timeout_ms = 10000;  // Extend timeout to 3 seconds
+  const uint32_t check_interval = 10;
+  uint32_t start_time = millis();
 
-  while ((millis() - start) < timeout_ms) {
+  while ((millis() - start_time) < timeout_ms) {
     while (client_.available()) {
       buf.push_back(client_.read());
     }
-    if (!buf.empty())
-      break;
-    delay(10);
+
+    // Break early if data has started coming in and there's a pause
+    if (!buf.empty()) {
+      static uint32_t last_rx_time = millis();
+      if ((millis() - last_rx_time) > 100) {
+        break;
+      }
+      last_rx_time = millis();
+    }
+
+    yield();  // allow other tasks
+    delay(check_interval);
   }
 
   if (buf.empty()) {
@@ -111,6 +121,7 @@ bool LuxPowertekComponent::receive_packet(std::vector<uint8_t> &buf) {
   ESP_LOGD(TAG, "RX raw %s", format_hex_pretty(buf).c_str());
   return true;
 }
+
 
 }  // namespace luxpowertek
 }  // namespace esphome
