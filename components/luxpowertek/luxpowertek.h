@@ -58,8 +58,8 @@ struct LuxLogDataRawSection1 {
 
 class LuxPowertekComponent : public PollingComponent {
  public:
-  void loop() override;
   void setup() override;
+  void loop() override;  // Added loop method
   void update() override;
 
   // TCP configuration
@@ -77,19 +77,13 @@ class LuxPowertekComponent : public PollingComponent {
   // Communication
   void start_communication();
   void disconnect();
+  bool send_request(uint16_t start_address);  // Fixed return type
+  void process_frame_();  // Corrected function name
+  
+  // Helper functions
   size_t build_read_packet(uint8_t *buf, uint16_t start_reg, uint16_t qty_reg);
   uint16_t crc16_modbus(const uint8_t *data, size_t length);
   void decode_bank0(const uint8_t *data);
-  
-  // State machine
-  enum CommState {
-    STATE_IDLE,
-    STATE_CONNECTED,
-    STATE_WAITING
-  };
-
-  bool send_request(uint16_t start_address);
-  void process_frame_();
 
   std::string host_;
   uint16_t port_;
@@ -102,6 +96,10 @@ class LuxPowertekComponent : public PollingComponent {
   sensor::Sensor *vbat_sensor_{nullptr};
   sensor::Sensor *soc_sensor_{nullptr};
   sensor::Sensor *p_discharge_sensor_{nullptr};
+
+  // State machine
+  enum CommState { STATE_IDLE, STATE_CONNECTED, STATE_WAITING };
+  CommState state_{STATE_IDLE};
 
   std::vector<uint8_t> rx_buffer_;
   uint32_t request_start_ms_{0};

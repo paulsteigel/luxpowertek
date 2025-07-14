@@ -23,6 +23,33 @@ void LuxPowertekComponent::update() {
   }
 }
 
+void LuxPowertekComponent::loop() {
+  if (this->state_ == STATE_IDLE || !this->client_.connected()) {
+    return;
+  }
+
+  // Handle incoming data
+  while (this->client_.available()) {
+    uint8_t c = this->client_.read();
+    this->rx_buffer_.push_back(c);
+    this->last_byte_ms_ = millis();
+  }
+
+  // Process if we have data and it's been 50ms since last byte
+  if (!this->rx_buffer_.empty() && (millis() - this->last_byte_ms_ > 50)) {
+    this->process_frame_();  // Corrected function name
+    this->rx_buffer_.clear();
+  }
+
+  // Handle timeout
+  if (this->state_ == STATE_WAITING && 
+      millis() - this->request_start_ms_ > 2000) {
+    ESP_LOGW(TAG, "Timeout waiting for response");
+    this->disconnect();
+    this->state_ = STATE_IDLE;
+  }
+}
+
 void LuxPowertekComponent::start_communication() {
   ESP_LOGD(TAG, "Starting communication");
   this->disconnect();
@@ -38,17 +65,22 @@ void LuxPowertekComponent::start_communication() {
   this->send_request(0);  // Start with bank 0
 }
 
-void LuxPowertekComponent::send_request(uint16_t start_address) {
+bool LuxPowertekComponent::send_request(uint16_t start_address) {  // Fixed return type
   uint8_t request[38];
   size_t len = this->build_read_packet(request, start_address, 40);
   
-  this->client_.write(request, len);
+  if (this->client_.write(request, len) != len) {
+    ESP_LOGE(TAG, "Send failed!");
+    return false;
+  }
+
   this->state_ = STATE_WAITING;
   this->request_start_ms_ = millis();
   this->last_byte_ms_ = millis();
   this->rx_buffer_.clear();
   
   ESP_LOGD(TAG, "Sent request for bank %d", start_address / 40);
+  return true;
 }
 
 size_t LuxPowertekComponent::build_read_packet(uint8_t *buf, uint16_t start_reg, uint16_t qty_reg) {
@@ -90,34 +122,7 @@ uint16_t LuxPowertekComponent::crc16_modbus(const uint8_t *data, size_t length) 
   return crc;
 }
 
-void LuxPowertekComponent::loop() {
-  if (this->state_ == STATE_IDLE || !this->client_.connected()) {
-    return;
-  }
-
-  // Handle incoming data
-  while (this->client_.available()) {
-    uint8_t c = this->client_.read();
-    this->rx_buffer_.push_back(c);
-    this->last_byte_ms_ = millis();
-  }
-
-  // Process if we have data and it's been 50ms since last byte
-  if (!this->rx_buffer_.empty() && (millis() - this->last_byte_ms_ > 50)) {
-    this->process_frame();
-    this->rx_buffer_.clear();
-  }
-
-  // Handle timeout
-  if (this->state_ == STATE_WAITING && 
-      millis() - this->request_start_ms_ > 2000) {
-    ESP_LOGW(TAG, "Timeout waiting for response");
-    this->disconnect();
-    this->state_ = STATE_IDLE;
-  }
-}
-
-void LuxPowertekComponent::process_frame() {
+void LuxPowertekComponent::process_frame_() {  // Corrected function name
   if (this->rx_buffer_.size() < 6) {
     ESP_LOGD(TAG, "Frame too short");
     return;
