@@ -145,7 +145,16 @@ class LuxPowertekComponent : public PollingComponent {
   size_t build_read_packet(uint8_t *buf, uint16_t start_reg);
   uint16_t crc16_modbus(const uint8_t *data, size_t length);
   void decode_bank0();
-
+  template <typename T>
+  void publish_state_(const std::string &key, T value) {
+      if (key == "lux_battery_voltage" && this->lux_vbat_sensor_) {
+          this->lux_battery_voltage_sensor_->publish_state(value);
+      } else if (key == "lux_battery_percent" && this->lux_battery_percent_sensor_) {
+          this->lux_battery_percent_sensor_->publish_state(value);
+      } else if (key == "lux_battery_discharge" && this->lux_battery_discharge_sensor_) {
+          this->lux_battery_discharge_sensor_->publish_state(value);
+      }
+  }
   // Raw data storage
   LuxLogDataRawSection1 bank0_{};
   LuxLogDataRawSection2 bank1_{};
@@ -160,12 +169,19 @@ class LuxPowertekComponent : public PollingComponent {
 
   WiFiClient client_;
 
-  sensor::Sensor *lux_vbat_sensor_{nullptr};
-  sensor::Sensor *lux_soc_sensor_{nullptr};
-  sensor::Sensor *lux_p_discharge_sensor_{nullptr};
+  sensor::Sensor *lux_battery_voltage_sensor_{nullptr};
+  sensor::Sensor *lux_battery_percent_sensor_{nullptr};
+  sensor::Sensor *lux_battery_discharge_sensor_{nullptr};
 
-  enum CommState { STATE_IDLE, STATE_CONNECTED, STATE_WAITING };
-  CommState state_{STATE_IDLE};
+  // luxpowertek.h
+  enum CommState {
+    STATE_IDLE,
+    STATE_CONNECTING,
+    STATE_SENDING,
+    STATE_WAITING_RESPONSE,
+    STATE_PROCESSING,
+    STATE_DISCONNECTING
+  };
 
   uint8_t current_bank_{0};
   std::vector<uint8_t> rx_buffer_;

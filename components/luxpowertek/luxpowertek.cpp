@@ -20,29 +20,56 @@ void LuxPowertekComponent::update() {
 }
 
 void LuxPowertekComponent::loop() {
-  if (this->state_ == STATE_IDLE || !this->client_.connected()) {
-    return;
-  }
+  switch (this->state_) {
+    case STATE_CONNECTING:
+      if (this->client_.connected()) {
+        ESP_LOGD(TAG, "Connected to %s:%d", this->host_.c_str(), this->port_);
+        this->state_ = STATE_SENDING;
+        this->last_byte_ms_ = millis();
+      } else if (millis() - this->request_start_ms_ > 15000) {
+        ESP_LOGE(TAG, "Connection timeout");
+        this->disconnect();
+        this->state_ = STATE_IDLE;
+      }
+      break;
 
-  // Handle incoming data
-  while (this->client_.available()) {
-    uint8_t c = this->client_.read();
-    this->rx_buffer_.push_back(c);
-    this->last_byte_ms_ = millis();
-  }
+    case STATE_SENDING:
+      if (this->send_request(this->current_bank_ * 40)) {
+        this->state_ = STATE_WAITING_RESPONSE;
+        this->request_start_ms_ = millis();
+      } else {
+        ESP_LOGE(TAG, "Send failed, disconnecting");
+        this->disconnect();
+        this->state_ = STATE_IDLE;
+      }
+      break;
 
-  // Process if we have data and it's been 50ms since last byte
-  if (!this->rx_buffer_.empty() && (millis() - this->last_byte_ms_ > 50)) {
-    this->process_frame();
-    this->rx_buffer_.clear();
-  }
+    case STATE_WAITING_RESPONSE:
+      // Handle incoming data
+      while (this->client_.available()) {
+        uint8_t c = this->client_.read();
+        this->rx_buffer_.push_back(c);
+        this->last_byte_ms_ = millis();
+      }
 
-  // Handle timeout
-  if (this->state_ == STATE_WAITING && 
-      millis() - this->request_start_ms_ > 2000) {
-    ESP_LOGW(TAG, "Bank %d response timeout", this->current_bank_);
-    this->disconnect();
-    this->state_ = STATE_IDLE;
+      // Process if we have data and it's been 50ms since last byte
+      if (!this->rx_buffer_.empty() && (millis() - this->last_byte_ms_ > 50)) {
+        this->state_ = STATE_PROCESSING;
+      }
+
+      // Handle timeout
+      if (millis() - this->request_start_ms_ > 15000) {
+        ESP_LOGW(TAG, "Bank %d response timeout", this->current_bank_);
+        this->disconnect();
+        this->state_ = STATE_IDLE;
+      }
+      break;
+
+    case STATE_PROCESSING:
+      this->process_frame();
+      this->rx_buffer_.clear();
+      break;
+
   }
 }
 
@@ -238,19 +265,10 @@ void LuxPowertekComponent::decode_bank0() {
   be_to_host(bank0_.p_discharge);
   // Continue for all struct members as needed...
 
-  // Update sensors
-  if (this->lux_vbat_sensor_) {
-    float vbat = bank0_.v_bat / 10.0f;
-    this->lux_vbat_sensor_->publish_state(vbat);
-  }
-
-  if (this->lux_soc_sensor_) {
-    this->lux_soc_sensor_->publish_state(bank0_.soc);
-  }
-
-  if (this->lux_p_discharge_sensor_) {
-    this->lux_p_discharge_sensor_->publish_state(bank0_.p_discharge);
-  }
+  // Bank0 sensors
+  publish_state_("lux_battery_voltage", bank0_.v_bat / 10.0f);
+  publish_state_("lux_battery_percent", static_cast<float>(bank0_.soc));
+  publish_state_("lux_battery_discharge", static_cast<float>(bank0_.p_discharge))
 
   ESP_LOGD(TAG, "Decoded: lux_vbat=%.1fV, lux_soc=%d%%, lux_p_discharge=%dW", 
            bank0_.v_bat / 10.0f, bank0_.soc, bank0_.p_discharge);
