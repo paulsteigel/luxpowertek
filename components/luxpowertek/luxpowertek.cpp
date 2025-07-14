@@ -42,7 +42,11 @@ void LuxPowertekComponent::send_request(uint16_t start_reg) {
   uint16_t crc = crc16_modbus(df, 16);
   *p++ = crc & 0xFF; *p++ = crc >> 8;
 
-  client_.connect(String(host_.c_str()), port_);
+  if (!client_.connect(host_.c_str(), port_)) {
+    ESP_LOGE(TAG, "Failed to connect");
+    return;
+  }
+
   client_.write(pkt, 38);
   ESP_LOGD(TAG, "TX Bank %u", start_reg);
 }
@@ -75,9 +79,8 @@ void LuxPowertekComponent::decode_bank0(const uint8_t *pl, size_t len) {
 }
 
 void LuxPowertekComponent::update() {
-  if (!client_.connect(host_, port_)) {
-    ESP_LOGW(TAG, "TCP connection failed");
-    return;
+  if (!client_.connect(host_.c_str(), port_)) {
+    ESP_LOGE(TAG, "Failed to connect");
   }
 
   send_request(0);

@@ -14,7 +14,8 @@ class LuxPowertekComponent : public PollingComponent {
   void set_host(const std::string &h) { this->host_ = h; }
   void set_port(uint16_t p) { port_ = p; }
   void set_dongle_serial(const std::string &s) { dongle_ = s; }
-  void set_inverter_serial(const std::string &s) { inv_serial_ = s; }
+  //void set_inverter_serial(const std::string &s) { inv_serial_ = s; }
+  void set_inverter_serial_number(const std::string &s);
 
   void setup() override;
   void update() override;
