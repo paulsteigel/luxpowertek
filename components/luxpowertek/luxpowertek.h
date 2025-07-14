@@ -1,48 +1,34 @@
 #pragma once
-#include "esphome/components/sensor/sensor.h"
+
 #include "esphome.h"
-#include <map>
-#include <string>
+#include "esphome/components/sensor/sensor.h"
+#include <WiFiClient.h>
 
 namespace esphome {
 namespace luxpowertek {
 
 class LuxPowertekComponent : public PollingComponent {
  public:
-  LuxPowertekComponent() : PollingComponent(20000) {}
-
-  void set_host(const std::string &h) { this->host_ = h; }
-  void set_port(uint16_t p) { port_ = p; }
-  void set_dongle_serial(const std::string &s) { dongle_ = s; }
-  //void set_inverter_serial(const std::string &s) { inv_serial_ = s; }
-  void set_inverter_serial_number(const std::string &s);
-
+  LuxPowertekComponent() = default;
   void setup() override;
   void update() override;
 
-  void register_sensor(const std::string &type, sensor::Sensor *s) {
-    sensors_[type] = s;
-  }
+  void set_host(const std::string &host) { this->host_ = host; }
+  void set_port(uint16_t port) { this->port_ = port; }
+  void set_inverter_serial_number(const std::string &serial);
+
+  sensor::Sensor *battery_discharge_sensor{nullptr};
+  sensor::Sensor *battery_voltage_sensor{nullptr};
+  sensor::Sensor *soc_sensor{nullptr};
 
  protected:
-  std::string host_;
-  uint16_t port_;
-  std::string dongle_;
-  std::string inv_serial_;
+  void send_request(uint16_t bank);
+
+  std::string host_;   // Hostname or IP string
+  uint16_t port_;      // TCP port
+
+  std::string inverter_serial_;  // Serial number of the inverter
   WiFiClient client_;
-  std::map<std::string, sensor::Sensor *> sensors_;
-
-  struct __attribute__((packed)) Bank0Data {
-    uint16_t p_discharge;
-    uint16_t p_charge;
-    uint16_t v_bat;  // ×0.1
-    uint8_t  soc;
-  };
-
-  void send_request(uint16_t start_reg);
-  bool read_packet(std::vector<uint8_t> &buf, uint16_t &start_reg);
-  void decode_bank0(const uint8_t *pl, size_t len);
-  static uint16_t crc16_modbus(const uint8_t *data, size_t len);
 };
 
 }  // namespace luxpowertek
