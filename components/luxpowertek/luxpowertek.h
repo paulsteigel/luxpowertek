@@ -132,9 +132,9 @@ class LuxPowertekComponent : public PollingComponent {
   void set_dongle_serial(const std::string &serial) { dongle_serial_ = serial; }
   void set_inverter_serial_number(const std::string &serial) { inverter_serial_ = serial; }
 
-  void set_lux_vbat_sensor(sensor::Sensor *s) { lux_vbat_sensor_ = s; }
-  void set_lux_soc_sensor(sensor::Sensor *s) { lux_soc_sensor_ = s; }
-  void set_lux_p_discharge_sensor(sensor::Sensor *s) { lux_p_discharge_sensor_ = s; }
+  void set_lux_vbat_sensor(sensor::Sensor *s) { lux_battery_voltage_sensor_ = s; }
+  void set_lux_soc_sensor(sensor::Sensor *s) { lux_battery_percent_sensor_ = s; }
+  void set_lux_p_discharge_sensor(sensor::Sensor *s) { lux_battery_discharge_sensor_ = s; }
 
  protected:
   void start_communication();
