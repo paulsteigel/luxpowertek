@@ -10,6 +10,7 @@ from esphome.const import (
     UNIT_PERCENT,
     UNIT_VOLT,
     UNIT_WATT,
+    STATE_CLASS_MEASUREMENT,
 )
 
 luxpowertek_ns = cg.esphome_ns.namespace("luxpowertek")
