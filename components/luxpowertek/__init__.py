@@ -13,7 +13,7 @@ LuxpowertekComponent = luxpowertek_ns.class_("LuxpowertekComponent", cg.PollingC
 
 CONF_LUXPOWERTEK_ID = "luxpowertek_id"
 
-luxpowertek_COMPONENT_SCHEMA = cv.Schema(
+LUXPOWERTEK_COMPONENT_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_LUXPOWERTEK_ID): cv.use_id(LuxpowertekComponent),
     }
