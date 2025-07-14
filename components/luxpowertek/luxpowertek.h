@@ -2,12 +2,13 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/sensor/sensor.h"
-#include "WiFiClient.h"
+#include <WiFiClient.h>
 
 namespace esphome {
 namespace luxpowertek {
 
 #pragma pack(push, 1)
+
 struct LuxLogDataRawSection1 {
   uint16_t status;
   int16_t  v_pv_1;
@@ -51,6 +52,7 @@ struct LuxLogDataRawSection1 {
   int16_t  v_bus_1;
   int16_t  v_bus_2;
 };
+
 #pragma pack(pop)
 
 class LuxPowertekComponent : public PollingComponent {
@@ -58,32 +60,28 @@ class LuxPowertekComponent : public PollingComponent {
   void setup() override;
   void update() override;
 
-  // Config setters
-  void set_host(const std::string &host) { this->host_ = host; }
-  void set_port(uint16_t port) { this->port_ = port; }
-  void set_dongle_serial(const std::string &s) { this->dongle_serial_ = s; }
-  void set_inverter_serial_number(const std::string &s) { this->inverter_serial_ = s; }
+  void set_host(const std::string &host) { host_ = host; }
+  void set_port(uint16_t port) { port_ = port; }
+  void set_dongle_serial(const std::string &serial) { dongle_serial_ = serial; }
+  void set_inverter_serial_number(const std::string &serial) { inverter_serial_ = serial; }
 
-  // Sensor setters
-  void set_soc_sensor(sensor::Sensor *sensor) { this->soc_sensor_ = sensor; }
-  void set_vbat_sensor(sensor::Sensor *sensor) { this->vbat_sensor_ = sensor; }
-  void set_p_discharge_sensor(sensor::Sensor *sensor) { this->p_discharge_sensor_ = sensor; }
+  void set_vbat_sensor(sensor::Sensor *s) { vbat_sensor_ = s; }
+  void set_soc_sensor(sensor::Sensor *s) { soc_sensor_ = s; }
+  void set_p_discharge_sensor(sensor::Sensor *s) { p_discharge_sensor_ = s; }
 
  protected:
-  void parse_packet_(const uint8_t *data, size_t length);
+  void send_request(uint16_t start_address);
+  bool receive_packet(std::vector<uint8_t> &buf);
 
-  // Config
   std::string host_;
   uint16_t port_;
   std::string dongle_serial_;
   std::string inverter_serial_;
 
-  // WiFi TCP client
   WiFiClient client_;
 
-  // Sensors
-  sensor::Sensor *soc_sensor_{nullptr};
   sensor::Sensor *vbat_sensor_{nullptr};
+  sensor::Sensor *soc_sensor_{nullptr};
   sensor::Sensor *p_discharge_sensor_{nullptr};
 };
 
