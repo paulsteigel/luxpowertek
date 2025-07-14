@@ -60,11 +60,13 @@ class LuxPowertekComponent : public PollingComponent {
   void setup() override;
   void update() override;
 
+  // set initial data for connection
   void set_host(const std::string &host) { host_ = host; }
   void set_port(uint16_t port) { port_ = port; }
   void set_dongle_serial(const std::string &serial) { dongle_serial_ = serial; }
   void set_inverter_serial_number(const std::string &serial) { inverter_serial_ = serial; }
-
+  
+  // define sensors setters
   void set_vbat_sensor(sensor::Sensor *s) { vbat_sensor_ = s; }
   void set_soc_sensor(sensor::Sensor *s) { soc_sensor_ = s; }
   void set_p_discharge_sensor(sensor::Sensor *s) { p_discharge_sensor_ = s; }
