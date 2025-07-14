@@ -12,7 +12,8 @@ from esphome.const import (
     CONF_ID,
 )
 
-from . import luxpowertek_ns, CONF_LUXPOWERTEK_ID, LUXPOWERTEK_COMPONENT_SCHEMA
+#from . import luxpowertek_ns, CONF_LUXPOWERTEK_ID, LUXPOWERTEK_COMPONENT_SCHEMA
+from .const import luxpowertek_ns, CONF_LUXPOWERTEK_ID, LUXPOWERTEK_COMPONENT_SCHEMA
 
 LuxPowertekComponent = luxpowertek_ns.class_("LuxPowertekComponent", cg.Component)
 
