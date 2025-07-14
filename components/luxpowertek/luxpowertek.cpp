@@ -239,9 +239,9 @@ void LuxPowertekComponent::decode_bank0() {
   // Continue for all struct members as needed...
 
   // Update sensors
-  if (this->vbat_sensor_) {
+  if (this->lux_vbat_sensor_) {
     float vbat = bank0_.v_bat / 10.0f;
-    this->vbat_sensor_->publish_state(vbat);
+    this->lux_vbat_sensor_->publish_state(vbat);
   }
 
   if (this->lux_soc_sensor_) {
