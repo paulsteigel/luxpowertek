@@ -6,6 +6,10 @@ namespace luxpowertek {
 
 static const char *const TAG = "luxpowertek";
 
+void LuxPowertekComponent::set_inverter_serial_number(const std::string &s) {
+  this->inverter_serial_ = s;
+}
+
 uint16_t LuxPowertekComponent::crc16_modbus(const uint8_t *data, size_t len) {
   uint16_t crc = 0xFFFF;
   while (len--) {
