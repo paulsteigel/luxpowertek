@@ -158,7 +158,7 @@ CONFIG_SCHEMA = LUXPOWERTEK_COMPONENT_SCHEMA.extend({
 
 
 async def to_code(config):
-    hub = await cg.get_variable(config[CONF_LUXPOWER_SNA_ID])
+    hub = await cg.get_variable(config[CONF_LUXPOWERTEK_ID])
     
     for yaml_key, c_name in YAML_TO_C_NAMES.items():
         if yaml_key in config:
