@@ -7,7 +7,7 @@ LuxPowertekComponent = luxpowertek_ns.class_("LuxPowertekComponent", cg.PollingC
 
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(LuxPowertekComponent),
-    cv.Required("host"): cv.ipv4,
+    cv.Required("host"): cv.ipv4_address,
     cv.Required("port"): cv.port,
     cv.Required("dongle_serial"): cv.string_strict,
     cv.Required("inverter_serial_number"): cv.string_strict,
