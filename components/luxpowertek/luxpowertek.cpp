@@ -270,7 +270,7 @@ void LuxPowertekComponent::decode_bank0() {
   publish_state_("lux_battery_percent", static_cast<float>(bank0_.soc));
   publish_state_("lux_battery_discharge", static_cast<float>(bank0_.p_discharge))
 
-  ESP_LOGD(TAG, "Decoded: lux_vbat=%.1fV, lux_soc=%d%%, lux_p_discharge=%dW", 
+  ESP_LOGD(TAG, "Decoded: lux_battery_voltage=%.1fV, lux_battery_percent=%d%%, lux_battery_discharge=%dW", 
            bank0_.v_bat / 10.0f, bank0_.soc, bank0_.p_discharge);
 }
 
